@@ -19,11 +19,10 @@ func BenchmarkListInParallel(b *testing.B) {
 }
 
 func TestListFiles(t *testing.T) {
-	files, err := ListFilesRecursively(".")
+	files1, err := ListFilesRecursively(".")
 	assert.Nil(t, err)
-	assert.Equal(t, 29, len(files))
 
-	files, err = ListFilesRecursivelyInParallel(".")
+	files2, err := ListFilesRecursivelyInParallel(".")
 	assert.Nil(t, err)
-	assert.Equal(t, 29, len(files))
+	assert.Equal(t, len(files2), len(files1))
 }
