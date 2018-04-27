@@ -18,6 +18,12 @@ func BenchmarkListInParallel(b *testing.B) {
 	}
 }
 
+func BenchmarkListFromFiles(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ListFilesFromFile("../../")
+	}
+}
+
 func TestListFiles(t *testing.T) {
 	files1, err := ListFilesRecursively(".")
 	assert.Nil(t, err)
@@ -25,4 +31,8 @@ func TestListFiles(t *testing.T) {
 	files2, err := ListFilesRecursivelyInParallel(".")
 	assert.Nil(t, err)
 	assert.Equal(t, len(files2), len(files1))
+
+	// files3, err := ListFilesFromFile(".")
+	// assert.Nil(t, err)
+	// assert.Equal(t, len(files2), len(files3))
 }

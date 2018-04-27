@@ -1,12 +1,25 @@
 package listfiles
 
+/*
+#include <stdio.h>
+#include <dirent.h>
+#include <string.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <sys/stat.h>
+extern void count(char *path, char *outfile);
+*/
+import "C"
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/mitchellh/hashstructure"
 )
@@ -14,6 +27,40 @@ import (
 func main() {
 	fmt.Println(ListFilesRecursively("."))
 	fmt.Println(ListFilesRecursivelyInParallel("."))
+}
+
+func ListFilesFromFile(dir string) (files []File, err error) {
+	os.Remove("files.txt")
+	arg1 := C.CString(dir)
+	defer C.free(unsafe.Pointer(arg1))
+	arg2 := C.CString("files.txt")
+	defer C.free(unsafe.Pointer(arg2))
+	C.count(arg1, arg2)
+	inFile, err := os.Open("files.txt")
+	if err != nil {
+		return
+	}
+	defer inFile.Close()
+	scanner := bufio.NewScanner(inFile)
+	scanner.Split(bufio.ScanLines)
+
+	files = []File{}
+	for scanner.Scan() {
+		path := filepath.Clean(strings.TrimSpace(scanner.Text()))
+		var f os.FileInfo
+		f, err = os.Lstat(path)
+		if err != nil {
+			return
+		}
+		files = append(files, File{
+			Path:    path,
+			Size:    f.Size(),
+			Mode:    f.Mode(),
+			ModTime: f.ModTime(),
+			IsDir:   f.IsDir(),
+		})
+	}
+	return
 }
 
 // ListFilesRecursively uses filepath.Walk to list all the files
@@ -55,7 +102,7 @@ func ListFilesRecursivelyInParallel(dir string) (files []File, err error) {
 		return
 	}
 	files = []File{
-		File{
+		{
 			Path:    dir,
 			Size:    info.Size(),
 			Mode:    info.Mode(),
