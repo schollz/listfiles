@@ -6,6 +6,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
+
+	"github.com/mitchellh/hashstructure"
 )
 
 func main() {
@@ -19,8 +22,11 @@ func ListFilesRecursively(dir string) (files []File, err error) {
 	files = []File{}
 	err = filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		files = append(files, File{
-			Info: f,
-			Path: path,
+			Path:    path,
+			Size:    f.Size(),
+			Mode:    f.Mode(),
+			ModTime: f.ModTime(),
+			IsDir:   f.IsDir(),
 		})
 		return nil
 	})
@@ -29,8 +35,12 @@ func ListFilesRecursively(dir string) (files []File, err error) {
 
 // File is the object that contains the info and path of the file
 type File struct {
-	Info os.FileInfo
-	Path string
+	Path    string
+	Size    int64
+	Mode    os.FileMode
+	ModTime time.Time
+	IsDir   bool
+	Hash    uint64 `hash:"ignore"`
 }
 
 // ListFilesRecursivelyInParallel uses goroutines to list all the files
@@ -46,8 +56,11 @@ func ListFilesRecursivelyInParallel(dir string) (files []File, err error) {
 	}
 	files = []File{
 		File{
-			Path: dir,
-			Info: info,
+			Path:    dir,
+			Size:    info.Size(),
+			Mode:    info.Mode(),
+			ModTime: info.ModTime(),
+			IsDir:   info.IsDir(),
 		},
 	}
 	f.Close()
@@ -81,10 +94,19 @@ func listFilesInParallel(dir string, startedDirectories chan bool, fileChan chan
 		panic(err)
 	}
 	for _, f := range files {
-		fileChan <- File{
-			Path: path.Join(dir, f.Name()),
-			Info: f,
+		fileStruct := File{
+			Path:    path.Join(dir, f.Name()),
+			Size:    f.Size(),
+			Mode:    f.Mode(),
+			ModTime: f.ModTime(),
+			IsDir:   f.IsDir(),
 		}
+		h, err := hashstructure.Hash(fileStruct, nil)
+		if err != nil {
+			panic(err)
+		}
+		fileStruct.Hash = h
+		fileChan <- fileStruct
 		if f.IsDir() {
 			startedDirectories <- true
 			go listFilesInParallel(path.Join(dir, f.Name()), startedDirectories, fileChan)
