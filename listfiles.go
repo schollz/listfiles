@@ -53,29 +53,29 @@ func ListFilesRecursivelyInParallel(dir string) (files []File, err error) {
 	f.Close()
 	fileChan := make(chan File)
 	startedDirectories := make(chan bool)
-	finishedDirectories := make(chan bool)
-	go listFilesInParallel(dir, startedDirectories, finishedDirectories, fileChan)
+	go listFilesInParallel(dir, startedDirectories, fileChan)
 
-	startedNum := 1
-	finishedNum := 0
+	runningCount := 1
 	for {
 		select {
 		case file := <-fileChan:
 			files = append(files, file)
-		case <-startedDirectories:
-			startedNum += 1
-		case <-finishedDirectories:
-			finishedNum += 1
+		case newDir := <-startedDirectories:
+			if newDir {
+				runningCount++
+			} else {
+				runningCount--
+			}
 		default:
 		}
-		if startedNum == finishedNum {
+		if runningCount == 0 {
 			break
 		}
 	}
 	return
 }
 
-func listFilesInParallel(dir string, startedDirectories chan bool, finishedDirectories chan bool, fileChan chan File) {
+func listFilesInParallel(dir string, startedDirectories chan bool, fileChan chan File) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		panic(err)
@@ -87,9 +87,9 @@ func listFilesInParallel(dir string, startedDirectories chan bool, finishedDirec
 		}
 		if f.IsDir() {
 			startedDirectories <- true
-			go listFilesInParallel(path.Join(dir, f.Name()), startedDirectories, finishedDirectories, fileChan)
+			go listFilesInParallel(path.Join(dir, f.Name()), startedDirectories, fileChan)
 		}
 	}
-	finishedDirectories <- true
+	startedDirectories <- false
 	return
 }
