@@ -8,13 +8,13 @@ import (
 
 func BenchmarkList(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ListFilesRecursively("../croc")
+		ListFilesRecursively("../../")
 	}
 }
 
 func BenchmarkListInParallel(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ListFilesRecursivelyInParallel("../croc")
+		ListFilesRecursivelyInParallel("../../")
 	}
 }
 
