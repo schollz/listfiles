@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -60,7 +61,11 @@ func ListFiles(dir string) {
 }
 
 func ListFilesFromFile(dir string) (files []File, err error) {
+	log.Println("listing directory with dirlist.c")
 	ListFiles(dir)
+
+	// count number of lines
+	log.Println("counting number of lines")
 	inFile, err := os.Open("files.txt")
 	if err != nil {
 		return
@@ -83,6 +88,7 @@ func ListFilesFromFile(dir string) (files []File, err error) {
 	jobs := make(chan string, lines)
 	results := make(chan result, lines)
 
+	log.Println("spwaning workers")
 	for w := 0; w < 8; w++ {
 		go func(jobs <-chan string, results chan<- result) {
 			for path := range jobs {
@@ -119,8 +125,7 @@ func ListFilesFromFile(dir string) (files []File, err error) {
 	for j := 0; j < lines; j++ {
 		result := <-results
 		if result.err != nil {
-			err = result.err
-			return
+			continue
 		}
 		files[i] = result.file
 		i++

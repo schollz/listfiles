@@ -74,7 +74,11 @@ void count(char *path, char *outfile) {
       if(DT_DIR == ent->d_type) {
 #else
       sprintf(subpath, "%s%c%s", path, PATH_SEPARATOR, ent->d_name);
+#if defined(WIN32) || defined(_WIN32) 
+      if(stat (subpath, &statbuf)) {
+#else
       if(lstat(subpath, &statbuf)) {
+#endif
           perror(subpath);
           return;
       }
