@@ -76,25 +76,53 @@ func ListFilesFromFile(dir string) (files []File, err error) {
 		return
 	}
 
+	type result struct {
+		err  error
+		file File
+	}
+	jobs := make(chan string, lines)
+	results := make(chan result, lines)
+
+	for w := 0; w < 8; w++ {
+		go func(jobs <-chan string, results chan<- result) {
+			for path := range jobs {
+				f, err := os.Lstat(path)
+				if err != nil {
+					results <- result{err: err}
+				} else {
+					results <- result{
+						file: File{
+							Path:    path,
+							Size:    f.Size(),
+							Mode:    f.Mode(),
+							ModTime: f.ModTime(),
+							IsDir:   f.IsDir(),
+						},
+						err: nil,
+					}
+				}
+			}
+		}(jobs, results)
+	}
+
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
 
-	files = make([]File, lines)
-	i := 0
 	for scanner.Scan() {
 		path := filepath.Clean(strings.TrimSpace(scanner.Text()))
-		var f os.FileInfo
-		f, err = os.Lstat(path)
-		if err != nil {
+		jobs <- path
+	}
+	close(jobs)
+
+	files = make([]File, lines)
+	i := 0
+	for j := 0; j < lines; j++ {
+		result := <-results
+		if result.err != nil {
+			err = result.err
 			return
 		}
-		files[i] = File{
-			Path:    path,
-			Size:    f.Size(),
-			Mode:    f.Mode(),
-			ModTime: f.ModTime(),
-			IsDir:   f.IsDir(),
-		}
+		files[i] = result.file
 		i++
 	}
 	return
