@@ -13,7 +13,6 @@ import "C"
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -26,11 +25,6 @@ import (
 
 	"github.com/mitchellh/hashstructure"
 )
-
-func main() {
-	fmt.Println(ListFilesRecursively("."))
-	fmt.Println(ListFilesRecursivelyInParallel("."))
-}
 
 func lineCounter(r io.Reader) (int, error) {
 	buf := make([]byte, 32*1024)
@@ -58,6 +52,15 @@ func dirlist(dir string) {
 	arg2 := C.CString("files.txt")
 	defer C.free(unsafe.Pointer(arg2))
 	C.count(arg1, arg2)
+}
+
+func ListFiles(dir string) (files []File, err error) {
+	if runtime.GOOS == "windows" {
+		files, err = ListFilesRecursivelyInParallel(dir)
+	} else {
+		files, err = ListFilesUsingC(dir)
+	}
+	return
 }
 
 func ListFilesUsingC(dir string) (files []File, err error) {
