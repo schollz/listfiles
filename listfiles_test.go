@@ -6,6 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkListFiles(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ListFiles("../../")
+	}
+}
+
 func BenchmarkList(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ListFilesRecursively("../../")

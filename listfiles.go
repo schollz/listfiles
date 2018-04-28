@@ -29,6 +29,15 @@ func main() {
 	fmt.Println(ListFilesRecursivelyInParallel("."))
 }
 
+func ListFiles(dir string) {
+	os.Remove("files.txt")
+	arg1 := C.CString(dir)
+	defer C.free(unsafe.Pointer(arg1))
+	arg2 := C.CString("files.txt")
+	defer C.free(unsafe.Pointer(arg2))
+	C.count(arg1, arg2)
+}
+
 func ListFilesFromFile(dir string) (files []File, err error) {
 	os.Remove("files.txt")
 	arg1 := C.CString(dir)
