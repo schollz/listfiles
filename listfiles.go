@@ -96,15 +96,22 @@ func ListFilesUsingC(dir string) (files []File, err error) {
 				if err != nil {
 					results <- result{err: err}
 				} else {
+					file := File{
+						Path:    path,
+						Size:    f.Size(),
+						Mode:    f.Mode(),
+						ModTime: f.ModTime(),
+						IsDir:   f.IsDir(),
+					}
+					h, err := hashstructure.Hash(file, nil)
+					if err != nil {
+						panic(err)
+					}
+					file.Hash = h
+
 					results <- result{
-						file: File{
-							Path:    path,
-							Size:    f.Size(),
-							Mode:    f.Mode(),
-							ModTime: f.ModTime(),
-							IsDir:   f.IsDir(),
-						},
-						err: nil,
+						file: file,
+						err:  nil,
 					}
 				}
 			}
@@ -138,13 +145,19 @@ func ListFilesRecursively(dir string) (files []File, err error) {
 	dir = filepath.Clean(dir)
 	files = []File{}
 	err = filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-		files = append(files, File{
+		file := File{
 			Path:    path,
 			Size:    f.Size(),
 			Mode:    f.Mode(),
 			ModTime: f.ModTime(),
 			IsDir:   f.IsDir(),
-		})
+		}
+		h, err := hashstructure.Hash(file, nil)
+		if err != nil {
+			panic(err)
+		}
+		file.Hash = h
+		files = append(files, file)
 		return nil
 	})
 	return
@@ -181,6 +194,13 @@ func ListFilesRecursivelyInParallel(dir string) (files []File, err error) {
 		},
 	}
 	f.Close()
+
+	h, err := hashstructure.Hash(files[0], nil)
+	if err != nil {
+		panic(err)
+	}
+	files[0].Hash = h
+
 	fileChan := make(chan File)
 	startedDirectories := make(chan bool)
 	go listFilesInParallel(dir, startedDirectories, fileChan)
