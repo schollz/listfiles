@@ -16,10 +16,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 	"unsafe"
@@ -61,11 +61,9 @@ func dirlist(dir string) {
 }
 
 func ListFilesUsingC(dir string) (files []File, err error) {
-	log.Println("listing directory with dirlist.c")
 	dirlist(dir)
 
 	// count number of lines
-	log.Println("counting number of lines")
 	inFile, err := os.Open("files.txt")
 	if err != nil {
 		return
@@ -88,8 +86,7 @@ func ListFilesUsingC(dir string) (files []File, err error) {
 	jobs := make(chan string, lines)
 	results := make(chan result, lines)
 
-	log.Println("spwaning workers")
-	for w := 0; w < 8; w++ {
+	for w := 0; w < runtime.NumCPU(); w++ {
 		go func(jobs <-chan string, results chan<- result) {
 			for path := range jobs {
 				f, err := os.Lstat(path)
