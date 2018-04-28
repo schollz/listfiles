@@ -1,6 +1,10 @@
 # listfiles
 
-List files recursively
+List files recursively, requires cgo.
+
+There are three methods here, it seems one of them is much better on Windows and one is much better on Linux (no tests on OSX). Neither of the better methods if the std `filepath.Walk` (StdLib).
+
+## Benchmarks
 
 On Windows (8-core) with SSD and tens of thousands files:
 
