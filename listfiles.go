@@ -12,7 +12,9 @@ extern void count(char *path, char *outfile);
 import "C"
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -29,6 +31,25 @@ func main() {
 	fmt.Println(ListFilesRecursivelyInParallel("."))
 }
 
+func lineCounter(r io.Reader) (int, error) {
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
+}
+
 func ListFiles(dir string) {
 	os.Remove("files.txt")
 	arg1 := C.CString(dir)
@@ -39,21 +60,27 @@ func ListFiles(dir string) {
 }
 
 func ListFilesFromFile(dir string) (files []File, err error) {
-	os.Remove("files.txt")
-	arg1 := C.CString(dir)
-	defer C.free(unsafe.Pointer(arg1))
-	arg2 := C.CString("files.txt")
-	defer C.free(unsafe.Pointer(arg2))
-	C.count(arg1, arg2)
+	ListFiles(dir)
 	inFile, err := os.Open("files.txt")
 	if err != nil {
 		return
 	}
-	defer inFile.Close()
+	lines, err := lineCounter(inFile)
+	inFile.Close()
+	if err != nil {
+		return
+	}
+
+	inFile, err = os.Open("files.txt")
+	if err != nil {
+		return
+	}
+
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
 
-	files = []File{}
+	files = make([]File, lines)
+	i := 0
 	for scanner.Scan() {
 		path := filepath.Clean(strings.TrimSpace(scanner.Text()))
 		var f os.FileInfo
@@ -61,13 +88,14 @@ func ListFilesFromFile(dir string) (files []File, err error) {
 		if err != nil {
 			return
 		}
-		files = append(files, File{
+		files[i] = File{
 			Path:    path,
 			Size:    f.Size(),
 			Mode:    f.Mode(),
 			ModTime: f.ModTime(),
 			IsDir:   f.IsDir(),
-		})
+		}
+		i++
 	}
 	return
 }

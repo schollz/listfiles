@@ -38,7 +38,7 @@ func TestListFiles(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(files2), len(files1))
 
-	// files3, err := ListFilesFromFile(".")
-	// assert.Nil(t, err)
-	// assert.Equal(t, len(files2), len(files3))
+	files3, err := ListFilesFromFile(".")
+	assert.Nil(t, err)
+	assert.Equal(t, len(files2), len(files3)+1)
 }
