@@ -46,10 +46,10 @@ func lineCounter(r io.Reader) (int, error) {
 }
 
 func dirlist(dir string) {
-	os.Remove("files.txt")
+	os.Remove("/tmp/files.txt")
 	arg1 := C.CString(dir)
 	defer C.free(unsafe.Pointer(arg1))
-	arg2 := C.CString("files.txt")
+	arg2 := C.CString("/tmp/files.txt")
 	defer C.free(unsafe.Pointer(arg2))
 	C.count(arg1, arg2)
 }
