@@ -1,7 +1,9 @@
 package listfiles
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -35,4 +37,39 @@ func TestListFiles(t *testing.T) {
 	files3, err := ListFilesUsingC(".")
 	assert.Nil(t, err)
 	assert.Equal(t, len(files2), len(files3)+1)
+}
+
+func TestFilesPerSecond(t *testing.T) {
+	dir := "."
+	start := time.Now()
+	files, err := ListFilesRecursively(dir)
+	assert.Nil(t, err)
+	fmt.Printf("ListFilesRecursively %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+
+	start = time.Now()
+	files, err = ListFilesRecursivelyInParallel(dir)
+	assert.Nil(t, err)
+	fmt.Printf("ListFilesRecursivelyInParallel %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+
+	start = time.Now()
+	files, err = ListFilesUsingC(dir)
+	assert.Nil(t, err)
+	fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+
+	dir = "../../"
+	start = time.Now()
+	files, err = ListFilesRecursively(dir)
+	assert.Nil(t, err)
+	fmt.Printf("ListFilesRecursively %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+
+	start = time.Now()
+	files, err = ListFilesRecursivelyInParallel(dir)
+	assert.Nil(t, err)
+	fmt.Printf("ListFilesRecursivelyInParallel %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+
+	start = time.Now()
+	files, err = ListFilesUsingC(dir)
+	assert.Nil(t, err)
+	fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+
 }
