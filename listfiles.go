@@ -86,7 +86,7 @@ func ListFilesUsingC(dir string) (files []File, err error) {
 	jobs := make(chan string, lines)
 	results := make(chan result, lines)
 
-	for w := 0; w < runtime.NumCPU(); w++ {
+	for w := 0; w < runtime.NumCPU()*2; w++ {
 		go func(jobs <-chan string, results chan<- result) {
 			for path := range jobs {
 				f, err := os.Lstat(path)
