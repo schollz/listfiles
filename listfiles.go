@@ -51,7 +51,7 @@ func lineCounter(r io.Reader) (int, error) {
 	}
 }
 
-func ListFiles(dir string) {
+func dirlist(dir string) {
 	os.Remove("files.txt")
 	arg1 := C.CString(dir)
 	defer C.free(unsafe.Pointer(arg1))
@@ -60,9 +60,9 @@ func ListFiles(dir string) {
 	C.count(arg1, arg2)
 }
 
-func ListFilesFromFile(dir string) (files []File, err error) {
+func ListFilesUsingC(dir string) (files []File, err error) {
 	log.Println("listing directory with dirlist.c")
-	ListFiles(dir)
+	dirlist(dir)
 
 	// count number of lines
 	log.Println("counting number of lines")

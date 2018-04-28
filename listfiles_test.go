@@ -6,12 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkDirlistC(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ListFiles("../..")
-	}
-}
-
 func BenchmarkListStdLib(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ListFilesRecursively("../../")
@@ -24,9 +18,9 @@ func BenchmarkListInParallel(b *testing.B) {
 	}
 }
 
-func BenchmarkListFromFiles(b *testing.B) {
+func BenchmarkListFilesUsingC(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ListFilesFromFile("../../")
+		ListFilesUsingC("../../")
 	}
 }
 
@@ -38,7 +32,7 @@ func TestListFiles(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(files2), len(files1))
 
-	files3, err := ListFilesFromFile(".")
+	files3, err := ListFilesUsingC(".")
 	assert.Nil(t, err)
 	assert.Equal(t, len(files2), len(files3)+1)
 }
