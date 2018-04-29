@@ -55,17 +55,19 @@ func ListFiles(dir string) (files []File, err error) {
 }
 
 func ListFilesUsingC(dir string) (files []File, err error) {
-	os.Remove("/tmp/files.txt")
+	f, _ := ioutil.TempFile("/tmp", "listfiles")
+	tempfile := f.Name()
+	f.Close()
+	defer os.Remove(tempfile)
+
 	arg1 := C.CString(dir)
 	defer C.free(unsafe.Pointer(arg1))
-	arg2 := C.CString("/tmp/files.txt")
+	arg2 := C.CString(tempfile)
 	defer C.free(unsafe.Pointer(arg2))
 	C.count(arg1, arg2)
 
-	defer os.Remove("/tmp/files.txt")
-
 	// count number of lines
-	inFile, err := os.Open("/tmp/files.txt")
+	inFile, err := os.Open(tempfile)
 	if err != nil {
 		return
 	}
@@ -75,7 +77,7 @@ func ListFilesUsingC(dir string) (files []File, err error) {
 		return
 	}
 
-	inFile, err = os.Open("/tmp/files.txt")
+	inFile, err = os.Open(tempfile)
 	if err != nil {
 		return
 	}
