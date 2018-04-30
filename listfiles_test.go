@@ -45,50 +45,58 @@ func TestListFiles(t *testing.T) {
 }
 
 func TestFilesPerSecond(t *testing.T) {
-	dir := "."
 	start := time.Now()
-	files, err := ListFilesRecursively(dir)
+	dir1 := "."
+	files, err := ListFiles(dir1)
 	assert.Nil(t, err)
-	fmt.Printf("ListFilesRecursively %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	smallNumFiles := len(files)
 
-	start = time.Now()
-	files, err = ListFilesRecursivelyInParallel(dir)
+	dir2 := "../.."
+	files, err = ListFiles(dir2)
 	assert.Nil(t, err)
-	fmt.Printf("ListFilesRecursivelyInParallel %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	largeNumFiles := len(files)
+
+	fmt.Printf("\tNum files:\t%d\t\t%d\n", smallNumFiles, largeNumFiles)
+	fmt.Print("ListFilesRecursively\t")
+	start = time.Now()
+	files, err = ListFilesRecursively(dir1)
+	assert.Nil(t, err)
+	fmt.Printf("%2.0f files/s", float64(len(files))/time.Since(start).Seconds())
+	start = time.Now()
+	files, err = ListFilesRecursively(dir2)
+	assert.Nil(t, err)
+	fmt.Printf("\t%2.0f files/s\n", float64(len(files))/time.Since(start).Seconds())
+
+	fmt.Print("ListFilesInParallel\t")
+	start = time.Now()
+	files, err = ListFilesRecursivelyInParallel(dir1)
+	assert.Nil(t, err)
+	fmt.Printf("%2.0f files/s", float64(len(files))/time.Since(start).Seconds())
+	start = time.Now()
+	files, err = ListFilesRecursivelyInParallel(dir2)
+	assert.Nil(t, err)
+	fmt.Printf("\t%2.0f files/s\n", float64(len(files))/time.Since(start).Seconds())
 
 	if runtime.GOOS != "windows" {
+		fmt.Print("ListFilesUsingC\t")
 		start = time.Now()
-		files, err = ListFilesUsingC(dir)
+		files, err = ListFilesUsingC(dir1)
 		assert.Nil(t, err)
-		fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+		fmt.Printf("%2.0f files/s", float64(len(files))/time.Since(start).Seconds())
+		start = time.Now()
+		files, err = ListFilesUsingC(dir2)
+		assert.Nil(t, err)
+		fmt.Printf("\t%2.0f files/s\n", float64(len(files))/time.Since(start).Seconds())
 	}
 
+	fmt.Print("ListFilesGodirwalk\t")
 	start = time.Now()
-	files, err = ListFilesGodirwalk(dir)
+	files, err = ListFilesGodirwalk(dir1)
 	assert.Nil(t, err)
-	fmt.Printf("ListFilesGodirwalk %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
-
-	dir = "../../"
+	fmt.Printf("%2.0f files/s", float64(len(files))/time.Since(start).Seconds())
 	start = time.Now()
-	files, err = ListFilesRecursively(dir)
+	files, err = ListFilesGodirwalk(dir2)
 	assert.Nil(t, err)
-	fmt.Printf("ListFilesRecursively %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
-
-	start = time.Now()
-	files, err = ListFilesRecursivelyInParallel(dir)
-	assert.Nil(t, err)
-	fmt.Printf("ListFilesRecursivelyInParallel %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
-
-	if runtime.GOOS != "windows" {
-		start = time.Now()
-		files, err = ListFilesUsingC(dir)
-		assert.Nil(t, err)
-		fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
-	}
-
-	start = time.Now()
-	files, err = ListFilesGodirwalk(dir)
-	assert.Nil(t, err)
-	fmt.Printf("ListFilesGodirwalk %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	fmt.Printf("\t%2.0f files/s\n", float64(len(files))/time.Since(start).Seconds())
 
 }
