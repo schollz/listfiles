@@ -2,6 +2,7 @@ package listfiles
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -37,6 +38,10 @@ func TestListFiles(t *testing.T) {
 	files3, err := ListFilesUsingC(".")
 	assert.Nil(t, err)
 	assert.Equal(t, len(files2), len(files3)+1)
+
+	files4, err := ListFilesGodirwalk(".")
+	assert.Nil(t, err)
+	assert.Equal(t, len(files2), len(files4))
 }
 
 func TestFilesPerSecond(t *testing.T) {
@@ -51,10 +56,17 @@ func TestFilesPerSecond(t *testing.T) {
 	assert.Nil(t, err)
 	fmt.Printf("ListFilesRecursivelyInParallel %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
 
+	if runtime.GOOS != "windows" {
+		start = time.Now()
+		files, err = ListFilesUsingC(dir)
+		assert.Nil(t, err)
+		fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	}
+
 	start = time.Now()
-	files, err = ListFilesUsingC(dir)
+	files, err = ListFilesGodirwalk(dir)
 	assert.Nil(t, err)
-	fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	fmt.Printf("ListFilesGodirwalk %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
 
 	dir = "../../"
 	start = time.Now()
@@ -67,9 +79,16 @@ func TestFilesPerSecond(t *testing.T) {
 	assert.Nil(t, err)
 	fmt.Printf("ListFilesRecursivelyInParallel %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
 
+	if runtime.GOOS != "windows" {
+		start = time.Now()
+		files, err = ListFilesUsingC(dir)
+		assert.Nil(t, err)
+		fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	}
+
 	start = time.Now()
-	files, err = ListFilesUsingC(dir)
+	files, err = ListFilesGodirwalk(dir)
 	assert.Nil(t, err)
-	fmt.Printf("ListFilesUsingC %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
+	fmt.Printf("ListFilesGodirwalk %2.0f files/s (%d files)\n", float64(len(files))/time.Since(start).Seconds(), len(files))
 
 }

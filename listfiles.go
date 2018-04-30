@@ -23,6 +23,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/karrick/godirwalk"
 	"github.com/mitchellh/hashstructure"
 )
 
@@ -137,6 +138,35 @@ func ListFilesUsingC(dir string) (files []File, err error) {
 		files[i] = result.file
 		i++
 	}
+	return
+}
+
+func ListFilesGodirwalk(dir string) (files []File, err error) {
+	files = []File{}
+	err = godirwalk.Walk(dir, &godirwalk.Options{
+		Callback: func(osPathname string, de *godirwalk.Dirent) (err error) {
+			f, err := os.Stat(osPathname)
+			if err != nil {
+				return
+			}
+			file := File{
+				Path:    osPathname,
+				Size:    f.Size(),
+				Mode:    f.Mode(),
+				ModTime: f.ModTime(),
+				IsDir:   f.IsDir(),
+			}
+			h, err := hashstructure.Hash(file, nil)
+			if err != nil {
+				return
+			}
+			file.Hash = h
+			files = append(files, file)
+			return nil
+		},
+		Unsorted: true,
+		ScratchBuffer:  make([]byte, 64*1024),
+	})
 	return
 }
 
