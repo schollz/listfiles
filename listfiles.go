@@ -23,9 +23,13 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/MichaelTJones/walk"
+	"github.com/iafan/cwalk"
 	"github.com/karrick/godirwalk"
 	"github.com/mitchellh/hashstructure"
 )
+
+var ComputeHashes = true
 
 func lineCounter(r io.Reader) (int, error) {
 	buf := make([]byte, 32*1024)
@@ -104,11 +108,13 @@ func ListFilesUsingC(dir string) (files []File, err error) {
 						ModTime: f.ModTime(),
 						IsDir:   f.IsDir(),
 					}
-					h, err := hashstructure.Hash(file, nil)
-					if err != nil {
-						panic(err)
+					if ComputeHashes {
+						h, err := hashstructure.Hash(file, nil)
+						if err != nil {
+							panic(err)
+						}
+						file.Hash = h
 					}
-					file.Hash = h
 
 					results <- result{
 						file: file,
@@ -156,16 +162,65 @@ func ListFilesGodirwalk(dir string) (files []File, err error) {
 				ModTime: f.ModTime(),
 				IsDir:   f.IsDir(),
 			}
-			h, err := hashstructure.Hash(file, nil)
-			if err != nil {
-				return
+			if ComputeHashes {
+				var h uint64
+				h, err = hashstructure.Hash(file, nil)
+				if err != nil {
+					return
+				}
+				file.Hash = h
 			}
-			file.Hash = h
 			files = append(files, file)
 			return nil
 		},
-		Unsorted: true,
-		ScratchBuffer:  make([]byte, 64*1024),
+		Unsorted:      true,
+		ScratchBuffer: make([]byte, 64*1024),
+	})
+	return
+}
+
+func ListFilesCwalk(dir string) (files []File, err error) {
+	files = []File{}
+	cwalk.Walk(dir, func(path string, f os.FileInfo, err error) error {
+		file := File{
+			Path:    path,
+			Size:    f.Size(),
+			Mode:    f.Mode(),
+			ModTime: f.ModTime(),
+			IsDir:   f.IsDir(),
+		}
+		if ComputeHashes {
+			h, err := hashstructure.Hash(file, nil)
+			if err != nil {
+				panic(err)
+			}
+			file.Hash = h
+		}
+		files = append(files, file)
+		return nil
+	})
+	return
+}
+
+func ListFilesJonesWalk(dir string) (files []File, err error) {
+	files = []File{}
+	walk.Walk(dir, func(path string, f os.FileInfo, err error) error {
+		file := File{
+			Path:    path,
+			Size:    f.Size(),
+			Mode:    f.Mode(),
+			ModTime: f.ModTime(),
+			IsDir:   f.IsDir(),
+		}
+		if ComputeHashes {
+			h, err := hashstructure.Hash(file, nil)
+			if err != nil {
+				panic(err)
+			}
+			file.Hash = h
+		}
+		files = append(files, file)
+		return nil
 	})
 	return
 }
@@ -182,11 +237,13 @@ func ListFilesRecursively(dir string) (files []File, err error) {
 			ModTime: f.ModTime(),
 			IsDir:   f.IsDir(),
 		}
-		h, err := hashstructure.Hash(file, nil)
-		if err != nil {
-			panic(err)
+		if ComputeHashes {
+			h, err := hashstructure.Hash(file, nil)
+			if err != nil {
+				panic(err)
+			}
+			file.Hash = h
 		}
-		file.Hash = h
 		files = append(files, file)
 		return nil
 	})
@@ -225,11 +282,13 @@ func ListFilesRecursivelyInParallel(dir string) (files []File, err error) {
 	}
 	f.Close()
 
-	h, err := hashstructure.Hash(files[0], nil)
-	if err != nil {
-		panic(err)
+	if ComputeHashes {
+		h, err := hashstructure.Hash(files[0], nil)
+		if err != nil {
+			panic(err)
+		}
+		files[0].Hash = h
 	}
-	files[0].Hash = h
 
 	fileChan := make(chan File)
 	startedDirectories := make(chan bool)
@@ -268,11 +327,13 @@ func listFilesInParallel(dir string, startedDirectories chan bool, fileChan chan
 			ModTime: f.ModTime(),
 			IsDir:   f.IsDir(),
 		}
-		h, err := hashstructure.Hash(fileStruct, nil)
-		if err != nil {
-			panic(err)
+		if ComputeHashes {
+			h, err := hashstructure.Hash(fileStruct, nil)
+			if err != nil {
+				panic(err)
+			}
+			fileStruct.Hash = h
 		}
-		fileStruct.Hash = h
 		fileChan <- fileStruct
 		if f.IsDir() {
 			startedDirectories <- true
